@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Змейка</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+      color: white;
+    }
+
+    canvas {
+      background-color: #222;
+      border: 2px solid #fff;
+      display: none; /* скрыта до старта */
+    }
+
+    #score {
+      position: absolute;
+      top: 20px;
+      text-align: center;
+      width: 100%;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    #startScreen {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
+    }
+
+    #startBtn {
+      padding: 15px 30px;
+      font-size: 20px;
+      background-color: #0f0;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    #startBtn:hover {
+      background-color: #6f6;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="startScreen">
+    <h1>Змейка</h1>
+    <button id="startBtn">Начать игру</button>
+  </div>
+
+  <div id="score">Счёт: 0</div>
+  <canvas id="game" width="400" height="400"></canvas>
+
+  <script>
+    const startScreen = document.getElementById("startScreen");
+    const startBtn = document.getElementById("startBtn");
+    const scoreEl = document.getElementById("score");
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const box = 20; // размер клетки
+    const rows = canvas.height / box;
+    const cols = canvas.width / box;
+
+    let score = 0;
+    let direction = "";
+    let gameInterval;
+    let snake = [];
+    let food = {};
+
+    function initGame() {
+      // Скрываем стартовый экран
+      startScreen.style.display = "none";
+      canvas.style.display = "block";
+
+      // Инициализация змейки и еды
+      snake = [{ x: 9 * box, y: 9 * box }];
+      food = {
+        x: Math.floor(Math.random() * cols) * box,
+        y: Math.floor(Math.random() * rows) * box
+      };
+      score = 0;
+      direction = "RIGHT";
+      scoreEl.innerText = "Счёт: " + score;
+
+      // Управление
+      document.addEventListener("keydown", changeDirection);
+
+      // Запуск игры
+      if (gameInterval) clearInterval(gameInterval);
+      gameInterval = setInterval(draw, 250); // 🚦 Замедлили до 150 мс
+    }
+
+    function changeDirection(event) {
+      if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+      else if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+      else if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+      else if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+    }
+
+    function draw() {
+      // Фон
+      ctx.fillStyle = "#222";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Рисуем змейку
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? "#0f0" : "#0a0";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+      }
+
+      // Рисуем еду
+      ctx.fillStyle = "#f00";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      // Перемещение головы
+      let headX = snake[0].x;
+      let headY = snake[0].y;
+
+      if (direction === "LEFT") headX -= box;
+      if (direction === "RIGHT") headX += box;
+      if (direction === "UP") headY -= box;
+      if (direction === "DOWN") headY += box;
+
+      // Проверка столкновений
+      if (
+        headX < 0 || headX >= canvas.width ||
+        headY < 0 || headY >= canvas.height ||
+        collision(headX, headY, snake)
+      ) {
+        clearInterval(gameInterval);
+        alert("Игра окончена! Счёт: " + score);
+        location.reload(); // перезагружаем страницу для повторной игры
+        return;
+      }
+
+      // Новое яблоко
+      if (headX === food.x && headY === food.y) {
+        score++;
+        scoreEl.innerText = "Счёт: " + score;
+        food = {
+          x: Math.floor(Math.random() * cols) * box,
+          y: Math.floor(Math.random() * rows) * box
+        };
+      } else {
+        snake.pop();
+      }
+
+      // Новая голова
+      const newHead = { x: headX, y: headY };
+      snake.unshift(newHead);
+    }
+
+    function collision(x, y, array) {
+      for (let i = 0; i < array.length; i++) {
+        if (array[i].x === x && array[i].y === y) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Обработчик кнопки старта
+    startBtn.addEventListener("click", () => {
+      initGame();
+    });
+  </script>
+</body>
+</html>
